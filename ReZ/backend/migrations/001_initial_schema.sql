@@ -1,4 +1,5 @@
 -- Enable useful extensions
+CREATE EXTENSION IF NOT EXISTS vector;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- 1) Recipes
@@ -19,6 +20,7 @@ CREATE TABLE recipes (
 );
 
 -- 2) Ingredients extracted per recipe
+
 CREATE TABLE recipe_ingredients (
   recipe_ingredient_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   recipe_id UUID NOT NULL REFERENCES recipes(recipe_id) ON DELETE CASCADE,
@@ -29,6 +31,7 @@ CREATE TABLE recipe_ingredients (
   optional BOOLEAN NOT NULL DEFAULT FALSE,
   notes TEXT,
   line_order INT NOT NULL,
+  embedding VECTOR(1536),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -49,11 +52,14 @@ CREATE TABLE products (
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  embedding VECTOR(1536),
   UNIQUE (retailer, retailer_sku)
 );
 
 CREATE INDEX idx_products_retailer ON products(retailer);
 CREATE INDEX idx_products_active ON products(is_active);
+CREATE INDEX idx_products_embedding_hnsw ON products USING hnsw (embedding vector_cosine_ops);
+ANALYZE products;
 
 -- 4) Ingredient -> product matches (auto + manual overrides)
 CREATE TABLE ingredient_matches (
@@ -107,5 +113,15 @@ CREATE TABLE events (
   metadata JSONB,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+   NEW.updated_at = now();
+   RETURN NEW;
+END;
+$$ language 'plpgsql';
 
+CREATE TRIGGER update_recipes_modtime BEFORE UPDATE ON recipes FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_products_modtime BEFORE UPDATE ON products FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE INDEX idx_events_type_time ON events(event_type, created_at DESC);
+
