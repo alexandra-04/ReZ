@@ -1,0 +1,6 @@
+retailer,retailer_sku,name,brand,size_text,unit_price,currency,product_url,image_url,is_active
+tesco,SKU001,Spaghetti,Own Brand,500g,1.20,GBP,https://example.com/spaghetti,,true
+tesco,SKU002,Garlic,Own Brand,3 bulbs,0.80,GBP,https://example.com/garlic,,true
+tesco,SKU003,Olive Oil Extra Virgin,Own Brand,500ml,4.50,GBP,https://example.com/olive-oil,,true
+tesco,SKU004,Salt,Own Brand,750g,0.65,GBP,https://example.com/salt,,true
+tesco,SKU005,Black Pepper,Own Brand,50g,1.10,GBP,https://example.com/pepper,,true
